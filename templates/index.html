@@ -14,6 +14,8 @@
     </header>
 
     <main class="main-content">
+      <p class="tool-description">Enter any email address to check whether the mailbox actually exists and can receive mail. Verification runs a live check against the mail server. No email is ever sent.</p>
+
       <div class="verify-form">
         <div class="input-row">
           <input
@@ -27,6 +29,25 @@
           <button id="verify-btn" class="verify-btn">Verify</button>
         </div>
         <div id="result-panel" class="result-panel"></div>
+
+        <div class="status-legend">
+          <div class="legend-item">
+            <span class="legend-dot dot-green"></span>
+            <span class="legend-label"><strong>Valid</strong> — Mailbox verified and deliverable</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot dot-yellow"></span>
+            <span class="legend-label"><strong>Risky</strong> — Address exists but may not deliver reliably (disposable, catch-all, or flagged)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot dot-red"></span>
+            <span class="legend-label"><strong>Invalid</strong> — Mailbox does not exist or address is malformed</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot dot-gray"></span>
+            <span class="legend-label"><strong>Error</strong> — Verification could not be completed</span>
+          </div>
+        </div>
       </div>
     </main>
   </div>
