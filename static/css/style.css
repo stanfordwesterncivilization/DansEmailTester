@@ -173,3 +173,52 @@ h1 {
   .input-row { flex-direction: column; }
   .verify-btn { padding: 10px; text-align: center; }
 }
+
+
+/* ── Tool description ───────────────────────────────────────────────────── */
+.tool-description {
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 28px;
+  line-height: 1.6;
+}
+
+/* ── Status legend ──────────────────────────────────────────────────────── */
+.status-legend {
+  margin-top: 32px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.dot-green  { background: var(--green); }
+.dot-yellow { background: var(--yellow); }
+.dot-red    { background: var(--red); }
+.dot-gray   { background: var(--gray); }
+
+.legend-label {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.legend-label strong {
+  color: var(--fg);
+  font-weight: 700;
+}
