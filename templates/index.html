@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dan's Email Tester</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <h1>Dan's Email Tester</h1>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn tab-btn--active" data-tab="single" role="tab" aria-selected="true">Single</button>
+    <button class="tab-btn" data-tab="bulk" role="tab" aria-selected="false">Bulk</button>
+  </nav>
+
+  <section class="tab-pane tab-pane--active" id="pane-single">
+    <label class="field-label" for="email-input">Email address</label>
+    <div class="input-row">
+      <input type="email" id="email-input" class="email-input"
+             placeholder="you@example.com" autocomplete="off" spellcheck="false" />
+      <button class="verify-btn" id="verify-btn">Verify</button>
+    </div>
+    <div class="result-panel" id="result-panel" aria-live="polite">
+      <p class="result-idle">Enter an address above to verify it.</p>
+    </div>
+  </section>
+
+  <section class="tab-pane" id="pane-bulk">
+    <label class="field-label" for="bulk-input">Addresses
+      <span style="font-weight:400;text-transform:none;letter-spacing:0">(one per line, max 100)</span>
+    </label>
+    <textarea id="bulk-input" class="bulk-textarea"
+              placeholder="alice@example.com&#10;bob@domain.net&#10;carol@site.org"></textarea>
+    <div class="bulk-actions">
+      <button class="verify-btn" id="bulk-btn">Verify all</button>
+      <button class="secondary-btn" id="download-btn" disabled>Download CSV</button>
+    </div>
+    <div id="bulk-results"></div>
+  </section>
+
+  <div class="legend">
+    <p class="legend-title">Status codes</p>
+    <div class="legend-rows">
+      <div class="legend-row"><span class="legend-label legend-label--green">Valid</span><span class="legend-desc">MX found, SMTP accepted, not a catch-all</span></div>
+      <div class="legend-row"><span class="legend-label legend-label--yellow">Unverifiable</span><span class="legend-desc">Server accepts all addresses or blocks probing</span></div>
+      <div class="legend-row"><span class="legend-label legend-label--red">Invalid</span><span class="legend-desc">Permanent rejection or no mail servers found</span></div>
+      <div class="legend-row"><span class="legend-label legend-label--gray">Error</span><span class="legend-desc">Timeout or connection failure — try again later</span></div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
