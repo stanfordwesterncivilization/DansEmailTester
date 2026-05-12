@@ -21,8 +21,8 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-# ─── Constants ──────────────────────────────────────────────────────────────
-SMTP_TIMEOUT     = 10          # seconds per connection attempt
+# ─── Constants ───────────────────────────────────────────────────────────────────────────
+SMTP_TIMEOUT     = 5           # seconds per connection attempt
 EHLO_DOMAIN      = "danstester.local"
 MAIL_FROM        = f"verify@{EHLO_DOMAIN}"
 CONNECT_RETRIES  = 1
@@ -73,7 +73,7 @@ GREYLISTING_PHRASES = [
     "greylisted", "greylist", "try again later", "temporary", "come back later",
 ]
 
-# ─── Helpers ────────────────────────────────────────────────────────────────
+# ─── Helpers ────────────────────────────────────────────────────────────────────────────
 def _random_address(domain: str) -> str:
     """Generate a random bogus address on the given domain for catch-all detection."""
     rand = "".join(random.choices(string.ascii_lowercase, k=12))
@@ -224,7 +224,7 @@ def _classify_result(
     return "error", f"Unexpected response ({real_code}): {real_msg}"
 
 
-# ─── Public API ─────────────────────────────────────────────────────────────
+# ─── Public API ───────────────────────────────────────────────────────────────────────────
 def verify_email(email: str) -> dict:
     """Main verification function."""
     result = {
@@ -269,19 +269,19 @@ def verify_email(email: str) -> dict:
 
     real_code = None
     real_msg  = "No response"
-    for mx in mx_hosts[:3]:
+    for mx in mx_hosts[:1]:
         code, msg = _smtp_probe(mx, email)
-        if code not in (408, 421):
-            real_code, real_msg = code, msg
-            break
         real_code, real_msg = code, msg
-        time.sleep(0.5)
 
     result["smtp_code"] = real_code
     result["smtp_msg"]  = real_msg
 
-    catchall_email = _random_address(domain)
-    catchall_code, catchall_msg = _smtp_probe(mx_hosts[0], catchall_email)
+    # Skip catch-all probe if connection already timed out / refused
+    if real_code in (408, 421):
+        catchall_code, catchall_msg = real_code, real_msg
+    else:
+        catchall_email = _random_address(domain)
+        catchall_code, catchall_msg = _smtp_probe(mx_hosts[0], catchall_email)
 
     if real_code in (250, 251) and catchall_code in (250, 251):
         result["catch_all"] = True
@@ -327,7 +327,7 @@ def results_to_csv(results: list[dict]) -> str:
     return out.getvalue()
 
 
-# ─── CLI ────────────────────────────────────────────────────────────────────
+# ─── CLI ───────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     import sys, json
     if len(sys.argv) < 2:
