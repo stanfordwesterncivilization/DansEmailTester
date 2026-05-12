@@ -1,22 +1,15 @@
 """
 DansEmailTester - Flask Web Application
-Wes Anderson-styled email verification tool.
 """
 import os
-import io
-import csv
-import json
 import time
-from flask import (
-    Flask, render_template, request,
-    jsonify, Response, send_file
-)
-from email_verifier import verify_email, verify_bulk, results_to_csv
+from flask import Flask, render_template, request, jsonify
+from email_verifier import verify_email
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "grand-budapest-hotel-secret")
 
-# Rate limiting (simple in-memory, per-process)
+# Simple in-memory rate limiter
 _request_times: list[float] = []
 MAX_REQUESTS_PER_MINUTE = 30
 
@@ -36,43 +29,13 @@ def index():
 @app.route("/verify", methods=["POST"])
 def verify():
     if _rate_limited():
-        return jsonify({
-            "error": "Too many requests. Please slow down.",
-            "status": "error"
-        }), 429
+        return jsonify({"error": "Too many requests. Please slow down.", "status": "error"}), 429
     data = request.get_json(silent=True) or {}
     email = data.get("email", "").strip()
     if not email:
         return jsonify({"error": "No email provided", "status": "error"}), 400
     result = verify_email(email)
     return jsonify(result)
-
-@app.route("/bulk", methods=["POST"])
-def bulk():
-    if _rate_limited():
-        return jsonify({"error": "Rate limited.", "status": "error"}), 429
-    # Accept JSON array or newline-separated text
-    content_type = request.content_type or ""
-    if "application/json" in content_type:
-        data = request.get_json(silent=True) or {}
-        emails = data.get("emails", [])
-    else:
-        raw = request.data.decode("utf-8", errors="replace")
-        emails = [line.strip() for line in raw.splitlines() if line.strip()]
-    if not emails:
-        return jsonify({"error": "No emails provided"}), 400
-    if len(emails) > 100:
-        return jsonify({"error": "Max 100 emails per bulk request"}), 400
-    results = verify_bulk(emails, delay=0.3)
-    fmt = request.args.get("format", "json").lower()
-    if fmt == "csv":
-        csv_data = results_to_csv(results)
-        return Response(
-            csv_data,
-            mimetype="text/csv",
-            headers={"Content-Disposition": "attachment; filename=results.csv"}
-        )
-    return jsonify(results)
 
 @app.route("/health")
 def health():
