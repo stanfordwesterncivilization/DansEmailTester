@@ -9,7 +9,7 @@ import requests as http
 logger = logging.getLogger(__name__)
 
 ABSTRACT_API_KEY = os.environ.get("ABSTRACT_API_KEY", "")
-ABSTRACT_API_URL = "https://emailvalidation.abstractapi.com/v1/"
+ABSTRACT_API_URL = "https://emailreputation.abstractapi.com/v1/"
 
 
 def verify_email(email: str) -> dict:
@@ -49,50 +49,54 @@ def verify_email(email: str) -> dict:
         result["details"] = f"API error: {e}"
         return result
 
-    # Map Abstract API fields to our result dict
-    result["syntax_ok"]     = data.get("is_valid_format", {}).get("value", False)
-    result["is_disposable"] = data.get("is_disposable_email", {}).get("value", False)
-    result["is_role_based"] = data.get("is_role_email", {}).get("value", False)
-    result["catch_all"]     = data.get("is_catchall_email", {}).get("value", None)
+    # Parse Email Reputation API response structure
+    deliverability = data.get("email_deliverability", {})
+    quality        = data.get("email_quality", {})
+    risk           = data.get("email_risk", {})
 
-    deliverability = data.get("deliverability", "UNKNOWN")
-    is_mx_found    = data.get("is_mx_found", {}).get("value", False)
-    quality_score  = data.get("quality_score", "")
-    autocorrect    = data.get("autocorrect", "")
+    is_format_valid = deliverability.get("is_format_valid", False)
+    is_mx_valid     = deliverability.get("is_mx_valid", False)
+    status          = deliverability.get("status", "unknown").lower()
+    mx_records      = deliverability.get("mx_records", [])
 
-    if not result["syntax_ok"]:
+    quality_score   = quality.get("score", "")
+    is_disposable   = quality.get("is_disposable", False)
+    is_catchall     = quality.get("is_catchall", False)
+    is_suspicious   = quality.get("is_username_suspicious", False)
+
+    address_risk    = risk.get("address_risk_status", "low").lower()
+
+    result["syntax_ok"]     = is_format_valid
+    result["mx_records"]    = mx_records
+    result["is_disposable"] = is_disposable
+    result["is_role_based"] = is_suspicious
+    result["catch_all"]     = is_catchall
+
+    if not is_format_valid:
         result["status"]  = "invalid"
         result["color"]   = "red"
         result["details"] = "Invalid email format"
-        if autocorrect:
-            result["details"] += f" — did you mean {autocorrect}?"
-
-    elif not is_mx_found:
+    elif not is_mx_valid:
         result["status"]  = "invalid"
         result["color"]   = "red"
         result["details"] = "Domain has no mail servers"
-
-    elif deliverability == "DELIVERABLE":
+    elif status == "deliverable":
         result["status"]  = "valid"
         result["color"]   = "green"
         result["details"] = f"Mailbox verified and deliverable (quality score: {quality_score})"
-
-    elif deliverability == "UNDELIVERABLE":
+    elif status == "undeliverable":
         result["status"]  = "invalid"
         result["color"]   = "red"
         result["details"] = "Mailbox does not exist or is not accepting mail"
-
-    elif deliverability == "RISKY":
+    elif status in ("risky", "unknown") or address_risk in ("medium", "high"):
         result["status"]  = "unverifiable"
         result["color"]   = "yellow"
-        parts = ["Risky address"]
-        if result["is_disposable"]:
-            parts.append("disposable domain")
-        if result["catch_all"]:
-            parts.append("catch-all mailbox")
-        result["details"] = " — ".join(parts) + f" (quality score: {quality_score})"
-
-    else:  # UNKNOWN
+        parts = ["Risky address" if address_risk in ("medium", "high") else "Could not confirm mailbox"]
+        if is_disposable: parts.append("disposable domain")
+        if is_catchall:   parts.append("catch-all mailbox")
+        score_str = f" (quality score: {quality_score})" if quality_score != "" else ""
+        result["details"] = " — ".join(parts) + score_str
+    else:
         result["status"]  = "unverifiable"
         result["color"]   = "yellow"
         result["details"] = f"Could not confirm mailbox — server did not respond (quality score: {quality_score})"
