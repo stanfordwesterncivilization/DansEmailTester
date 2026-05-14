@@ -3,6 +3,8 @@ DansEmailTester - Flask Web Application
 """
 import os
 import time
+import threading
+import requests
 from flask import Flask, render_template, request, jsonify
 from email_verifier import verify_email
 
@@ -21,6 +23,22 @@ def _rate_limited() -> bool:
         return True
     _request_times.append(now)
     return False
+
+# ── Self-ping to prevent Render free-tier spin-down ──────────────────────────
+def _keep_alive():
+    """Ping our own /health endpoint every 10 minutes to prevent inactivity spin-down."""
+    base_url = os.environ.get("RENDER_EXTERNAL_URL", "").rstrip("/")
+    if not base_url:
+        return  # Not running on Render — no-op in local dev
+    while True:
+        time.sleep(600)
+        try:
+            requests.get(f"{base_url}/health", timeout=10)
+        except Exception:
+            pass
+
+threading.Thread(target=_keep_alive, daemon=True).start()
+# ─────────────────────────────────────────────────────────────────────────────
 
 @app.route("/")
 def index():
